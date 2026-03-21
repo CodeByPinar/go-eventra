@@ -1,0 +1,22 @@
+# Environment
+configs/.env
+.env
+.env.*
+
+# Build artifacts
+bin/
+*.exe
+*.out
+
+# Logs
+*.log
+
+# Frontend artifacts
+frontend/node_modules/
+frontend/dist/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

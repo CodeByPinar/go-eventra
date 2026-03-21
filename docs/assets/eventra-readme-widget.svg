@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="280" viewBox="0 0 1280 280" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="42" y1="24" x2="1222" y2="262" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0C1F3A"/>
+      <stop offset="1" stop-color="#08152D"/>
+    </linearGradient>
+    <radialGradient id="a" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1048 46) rotate(147) scale(290 164)">
+      <stop offset="0" stop-color="#55EAD6" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#55EAD6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="b" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(214 250) rotate(-11) scale(410 220)">
+      <stop offset="0" stop-color="#70CCFF" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#70CCFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="chip" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1B3558"/>
+      <stop offset="1" stop-color="#142947"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="16" y="12" width="1248" height="256" rx="24" fill="url(#bg)"/>
+  <rect x="16" y="12" width="1248" height="256" rx="24" fill="url(#a)"/>
+  <rect x="16" y="12" width="1248" height="256" rx="24" fill="url(#b)"/>
+  <rect x="16" y="12" width="1248" height="256" rx="24" stroke="rgba(149,186,245,0.28)"/>
+
+  <text x="64" y="92" fill="#F1F7FF" font-family="Segoe UI, Arial, sans-serif" font-size="48" font-weight="800">Eventra Auth Platform</text>
+  <text x="64" y="136" fill="#AFC8EC" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="600">Go API + PostgreSQL + Premium React Console</text>
+
+  <g>
+    <rect x="64" y="170" width="196" height="56" rx="14" fill="url(#chip)" stroke="rgba(115,171,244,0.35)"/>
+    <text x="92" y="205" fill="#94F4E0" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700">6 Endpoints</text>
+  </g>
+  <g>
+    <rect x="278" y="170" width="264" height="56" rx="14" fill="url(#chip)" stroke="rgba(115,171,244,0.35)"/>
+    <text x="306" y="205" fill="#FFD985" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700">Refresh Rotation</text>
+  </g>
+  <g>
+    <rect x="560" y="170" width="232" height="56" rx="14" fill="url(#chip)" stroke="rgba(115,171,244,0.35)"/>
+    <text x="588" y="205" fill="#9FD2FF" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700">Rate Limiting</text>
+  </g>
+
+  <g>
+    <rect x="888" y="66" width="300" height="160" rx="18" fill="rgba(16,35,61,0.72)" stroke="rgba(149,186,245,0.32)"/>
+    <path d="M938 106H1138" stroke="#8CF5FF" stroke-width="8" stroke-linecap="round"/>
+    <path d="M938 142H1094" stroke="#8CF5FF" stroke-width="8" stroke-linecap="round"/>
+    <path d="M938 178H1138" stroke="#8CF5FF" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="1138" cy="142" r="22" fill="#F7CB68"/>
+    <path d="M1130 143L1137 150L1148 136" stroke="#1B3558" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
