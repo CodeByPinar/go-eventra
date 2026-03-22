@@ -253,6 +253,7 @@ function App() {
   const sessionState = accessToken ? 'Active' : 'Guest'
   const securityState = refreshToken ? 'Rotation enabled' : 'No refresh token'
   const isAuthenticated = Boolean(accessToken && user)
+  const isGuestEventsPage = !isAuthenticated && location.pathname === '/events'
   const loginRetrySeconds = Math.max(0, Math.ceil((loginLockedUntil - nowMs) / 1000))
   const isLoginLocked = loginRetrySeconds > 0
 
@@ -565,10 +566,15 @@ function App() {
     }
   }
 
-  const loadEvents = async () => {
+  const loadEvents = async (withAuth: boolean = isAuthenticated) => {
     setEventsLoading(true)
     try {
-      const data = await callApi<EventListResponse>('/api/v1/events?limit=50', 'GET', undefined, true)
+      const data = await callApi<EventListResponse>(
+        '/api/v1/events?limit=50',
+        'GET',
+        undefined,
+        withAuth,
+      )
       setEvents(data.items)
       setMessage(`${data.count} event loaded successfully.`)
     } catch (error) {
@@ -662,7 +668,7 @@ function App() {
   }
 
   useEffect(() => {
-    if (!isAuthenticated && location.pathname !== '/') {
+    if (!isAuthenticated && location.pathname !== '/' && location.pathname !== '/events') {
       navigate('/')
       return
     }
@@ -673,8 +679,8 @@ function App() {
   }, [isAuthenticated, location.pathname, navigate])
 
   useEffect(() => {
-    if (isAuthenticated && location.pathname === '/events') {
-      void loadEvents()
+    if (location.pathname === '/events') {
+      void loadEvents(isAuthenticated)
     }
   }, [isAuthenticated, location.pathname])
 
@@ -763,10 +769,15 @@ function App() {
     <section className="panel events-panel">
       <div className="panel-head">
         <h2>Events</h2>
-        <p>Create, update, and manage event inventory directly from frontend.</p>
+        <p>
+          {isAuthenticated
+            ? 'Create, update, and manage event inventory directly from frontend.'
+            : 'Public events are visible. Sign in to create, edit, and delete events.'}
+        </p>
       </div>
 
-      <form className="auth-form event-form" onSubmit={onSaveEvent}>
+      {isAuthenticated && (
+        <form className="auth-form event-form" onSubmit={onSaveEvent}>
         <div className="event-form-grid">
           <label>
             Title
@@ -864,11 +875,18 @@ function App() {
           <button type="button" onClick={resetEventComposer} disabled={eventsLoading}>
             Reset
           </button>
-          <button type="button" onClick={loadEvents} disabled={eventsLoading}>
+          <button
+            type="button"
+            onClick={() => {
+              void loadEvents(isAuthenticated)
+            }}
+            disabled={eventsLoading}
+          >
             Reload list
           </button>
         </div>
-      </form>
+        </form>
+      )}
 
       <div className="events-list">
         {events.length === 0 ? (
@@ -887,19 +905,21 @@ function App() {
                   {item.participant_limit ?? 'unlimited'} · Tags: {item.tags.join(', ') || '-'}
                 </p>
               </div>
-              <div className="event-actions">
-                <button type="button" onClick={() => onEditEvent(item)} disabled={eventsLoading}>
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  className="danger"
-                  onClick={() => onDeleteEvent(item.id)}
-                  disabled={eventsLoading}
-                >
-                  Delete
-                </button>
-              </div>
+              {isAuthenticated && (
+                <div className="event-actions">
+                  <button type="button" onClick={() => onEditEvent(item)} disabled={eventsLoading}>
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="danger"
+                    onClick={() => onDeleteEvent(item.id)}
+                    disabled={eventsLoading}
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
             </article>
           ))
         )}
@@ -958,7 +978,7 @@ function App() {
         </article>
       </section>
 
-      {!isAuthenticated ? (
+      {!isAuthenticated && !isGuestEventsPage ? (
         <main className="main-grid">
           <section className="panel auth-panel">
             <div className="panel-head">
@@ -1055,6 +1075,9 @@ function App() {
                       ? `Try again in ${loginRetrySeconds}s`
                       : 'Sign in'}
                 </button>
+                <Link className="cta" to="/events" style={{ textAlign: 'center' }}>
+                  Browse public events
+                </Link>
               </form>
             )}
           </section>
@@ -1071,6 +1094,10 @@ function App() {
               gosterilir.
             </p>
           </section>
+        </main>
+      ) : isGuestEventsPage ? (
+        <main className="main-grid">
+          <EventsPage />
         </main>
       ) : (
         <section className="signed-shell">
