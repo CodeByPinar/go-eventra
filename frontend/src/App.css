@@ -186,11 +186,58 @@
 .event-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 16px;
 }
 
 .event-form-grid .wide {
   grid-column: 1 / -1;
+}
+
+.event-form {
+  margin-top: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 1rem;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--surface) 75%, transparent), var(--surface-soft));
+}
+
+.event-form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.42rem;
+  font-size: 0.84rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.event-form-grid input,
+.event-form-grid select,
+.event-form-grid textarea {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--surface-soft) 92%, black 8%);
+  color: var(--text);
+  padding: 0.78rem 0.9rem;
+  font: inherit;
+  font-size: 0.95rem;
+  text-transform: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.event-form-grid input::placeholder,
+.event-form-grid textarea::placeholder {
+  color: color-mix(in oklab, var(--text-soft) 86%, transparent);
+}
+
+.event-form-grid input:focus,
+.event-form-grid select:focus,
+.event-form-grid textarea:focus {
+  outline: none;
+  border-color: color-mix(in oklab, var(--text-h) 35%, var(--border));
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--text-h) 14%, transparent);
+  transform: translateY(-1px);
 }
 
 .event-form select,
@@ -205,23 +252,24 @@
 }
 
 .events-list {
-  margin-top: 1rem;
+  margin-top: 1.1rem;
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .event-item {
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 14px;
+  padding: 14px 15px;
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  background: var(--surface-soft);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--surface-soft) 90%, transparent), var(--surface-soft));
 }
 
 .event-item h3 {
   margin: 0 0 6px;
+  letter-spacing: 0.01em;
 }
 
 .event-item p {
@@ -238,14 +286,23 @@
   display: flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .empty-state {
   color: var(--text-soft);
   margin: 0.4rem 0;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem;
+  background: color-mix(in oklab, var(--surface-soft) 94%, transparent);
 }
 
 @media (max-width: 900px) {
+  .event-form {
+    padding: 0.85rem;
+  }
+
   .event-form-grid {
     grid-template-columns: 1fr;
   }

@@ -632,6 +632,15 @@ function App() {
     }
   }
 
+  const onEventComposerKeyDown = (event: React.KeyboardEvent<HTMLFormElement>) => {
+    if (event.key !== 'Enter') return
+
+    const target = event.target as HTMLElement
+    if (target.tagName === 'TEXTAREA') return
+
+    event.preventDefault()
+  }
+
   const onEditEvent = (selected: EventPayload) => {
     setEditingEventId(selected.id)
     setEventForm({
@@ -710,13 +719,13 @@ function App() {
       </div>
 
       <div className="action-row">
-        <button onClick={onRefresh} disabled={loading || !refreshToken}>
+        <button type="button" onClick={onRefresh} disabled={loading || !refreshToken}>
           Refresh Session
         </button>
-        <button onClick={onFetchMe} disabled={loading || !accessToken}>
+        <button type="button" onClick={onFetchMe} disabled={loading || !accessToken}>
           Fetch Me
         </button>
-        <button className="danger" onClick={onLogout} disabled={loading}>
+        <button type="button" className="danger" onClick={onLogout} disabled={loading}>
           Logout
         </button>
       </div>
@@ -740,7 +749,7 @@ function App() {
       </div>
 
       <div className="profile-top">
-        <div className="avatar-badge">{user?.username.charAt(0).toUpperCase()}</div>
+        <div className="avatar-badge">{(user?.username?.charAt(0) ?? '?').toUpperCase()}</div>
         <div>
           <h3>{user?.username}</h3>
           <p>{user?.email}</p>
@@ -777,7 +786,7 @@ function App() {
       </div>
 
       {isAuthenticated && (
-        <form className="auth-form event-form" onSubmit={onSaveEvent}>
+        <form className="auth-form event-form" onSubmit={onSaveEvent} onKeyDown={onEventComposerKeyDown}>
         <div className="event-form-grid">
           <label>
             Title
@@ -902,7 +911,7 @@ function App() {
                 </p>
                 <p className="event-meta">
                   Category: {item.category || 'N/A'} · Limit:{' '}
-                  {item.participant_limit ?? 'unlimited'} · Tags: {item.tags.join(', ') || '-'}
+                  {item.participant_limit ?? 'unlimited'} · Tags: {(item.tags ?? []).join(', ') || '-'}
                 </p>
               </div>
               {isAuthenticated && (
@@ -988,12 +997,14 @@ function App() {
 
             <div className="tab-row">
               <button
+                type="button"
                 className={activeTab === 'register' ? 'tab active' : 'tab'}
                 onClick={() => setActiveTab('register')}
               >
                 Register
               </button>
               <button
+                type="button"
                 className={activeTab === 'login' ? 'tab active' : 'tab'}
                 onClick={() => setActiveTab('login')}
               >
@@ -1120,7 +1131,7 @@ function App() {
             >
               Events
             </Link>
-            <button className="nav-logout" onClick={onLogout} disabled={loading}>
+            <button type="button" className="nav-logout" onClick={onLogout} disabled={loading}>
               Logout
             </button>
           </nav>
