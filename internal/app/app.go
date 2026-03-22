@@ -15,6 +15,7 @@ import (
 	"eventra/internal/delivery/httpserver"
 	"eventra/internal/repository/postgres"
 	"eventra/internal/usecase/auth"
+	usecaseevent "eventra/internal/usecase/event"
 	"eventra/pkg/database"
 	"eventra/pkg/security"
 )
@@ -37,6 +38,7 @@ func Run(ctx context.Context) error {
 	securityRepo := postgres.NewLoginSecurityRepository(dbPool)
 	auditRepo := postgres.NewSecurityAuditRepository(dbPool, cfg.SecurityAlertWebhookURL, cfg.SecurityAlertWebhookFormat)
 	tokenBlacklistRepo := postgres.NewTokenBlacklistRepository(dbPool)
+	eventRepo := postgres.NewEventRepository(dbPool)
 	authService := auth.NewService(
 		userRepo,
 		refreshRepo,
@@ -46,9 +48,11 @@ func Run(ctx context.Context) error {
 		auth.WithAuditLogger(auditRepo),
 		auth.WithTokenBlacklist(tokenBlacklistRepo),
 	)
+	eventService := usecaseevent.NewService(eventRepo)
 	authHandler := httpserver.NewAuthHandler(authService)
+	eventHandler := httpserver.NewEventHandler(eventService)
 
-	router := httpserver.NewRouter(authHandler, jwtManager, tokenBlacklistRepo, cfg.CORSAllowedOrigins)
+	router := httpserver.NewRouter(authHandler, eventHandler, jwtManager, tokenBlacklistRepo, cfg.CORSAllowedOrigins)
 	server := &http.Server{
 		Addr:              ":" + cfg.Port,
 		Handler:           router,

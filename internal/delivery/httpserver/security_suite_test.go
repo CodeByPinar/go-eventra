@@ -7,13 +7,15 @@ import (
 	"testing"
 	"time"
 
+	usecaseevent "eventra/internal/usecase/event"
 	"eventra/pkg/security"
 )
 
 func newTestRouter() http.Handler {
 	handler := &AuthHandler{}
+	eventHandler := NewEventHandler(usecaseevent.NewService(nil))
 	jwtManager := security.NewJWTManager("test-secret", time.Hour)
-	return NewRouter(handler, jwtManager, nil, []string{"http://localhost:5173"})
+	return NewRouter(handler, eventHandler, jwtManager, nil, []string{"http://localhost:5173"})
 }
 
 func TestCORSBypassBlocked(t *testing.T) {

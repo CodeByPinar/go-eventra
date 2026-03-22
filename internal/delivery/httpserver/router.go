@@ -9,7 +9,7 @@ import (
 	"eventra/pkg/security"
 )
 
-func NewRouter(authHandler *AuthHandler, jwtManager *security.JWTManager, blacklist tokenBlacklistChecker, allowedOrigins []string) http.Handler {
+func NewRouter(authHandler *AuthHandler, eventHandler *EventHandler, jwtManager *security.JWTManager, blacklist tokenBlacklistChecker, allowedOrigins []string) http.Handler {
 	mux := http.NewServeMux()
 	rateLimiter := newInMemoryRateLimiter(20, time.Minute)
 
@@ -22,6 +22,11 @@ func NewRouter(authHandler *AuthHandler, jwtManager *security.JWTManager, blackl
 	mux.Handle("POST /api/v1/auth/refresh", authRateLimitMiddleware(rateLimiter, http.HandlerFunc(authHandler.Refresh)))
 	mux.Handle("POST /api/v1/auth/logout", authRateLimitMiddleware(rateLimiter, http.HandlerFunc(authHandler.Logout)))
 	mux.HandleFunc("GET /api/v1/auth/me", RequireAuth(jwtManager, blacklist, authHandler.Me))
+	mux.HandleFunc("GET /api/v1/events", OptionalAuth(jwtManager, blacklist, eventHandler.List))
+	mux.HandleFunc("GET /api/v1/events/{id}", OptionalAuth(jwtManager, blacklist, eventHandler.GetByID))
+	mux.HandleFunc("POST /api/v1/events", RequireAuth(jwtManager, blacklist, eventHandler.Create))
+	mux.HandleFunc("PUT /api/v1/events/{id}", RequireAuth(jwtManager, blacklist, eventHandler.Update))
+	mux.HandleFunc("DELETE /api/v1/events/{id}", RequireAuth(jwtManager, blacklist, eventHandler.Delete))
 
 	return chainMiddleware(
 		mux,

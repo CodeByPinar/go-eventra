@@ -25,6 +25,37 @@ type MeResponse = {
   email: string
 }
 
+type EventPayload = {
+  id: string
+  organizer_id: string
+  title: string
+  description: string
+  event_date: string
+  location: string
+  visibility: 'public' | 'private'
+  participant_limit?: number | null
+  category?: string
+  tags: string[]
+  created_at: string
+  updated_at: string
+}
+
+type EventListResponse = {
+  items: EventPayload[]
+  count: number
+}
+
+type EventFormState = {
+  title: string
+  description: string
+  eventDate: string
+  location: string
+  visibility: 'public' | 'private'
+  participantLimit: string
+  category: string
+  tags: string
+}
+
 const STORAGE_KEYS = {
   accessToken: 'eventra_access_token',
   refreshToken: 'eventra_refresh_token',
@@ -40,9 +71,9 @@ const LOGIN_DELAY_BASE_MS = 1500
 const LOGIN_DELAY_MAX_MS = 15000
 
 type EndpointItem = {
-  method: 'GET' | 'POST'
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE'
   path: string
-  icon: 'user-add' | 'login' | 'refresh' | 'logout' | 'profile' | 'health'
+  icon: 'user-add' | 'login' | 'refresh' | 'logout' | 'profile' | 'health' | 'event'
 }
 
 const endpointItems: EndpointItem[] = [
@@ -51,6 +82,10 @@ const endpointItems: EndpointItem[] = [
   { method: 'POST', path: '/api/v1/auth/refresh', icon: 'refresh' },
   { method: 'POST', path: '/api/v1/auth/logout', icon: 'logout' },
   { method: 'GET', path: '/api/v1/auth/me', icon: 'profile' },
+  { method: 'GET', path: '/api/v1/events', icon: 'event' },
+  { method: 'POST', path: '/api/v1/events', icon: 'event' },
+  { method: 'PUT', path: '/api/v1/events/{id}', icon: 'event' },
+  { method: 'DELETE', path: '/api/v1/events/{id}', icon: 'event' },
   { method: 'GET', path: '/health', icon: 'health' },
 ]
 
@@ -62,6 +97,17 @@ type ApiErrorPayload = {
 type RequestOptions = {
   retries?: number
 }
+
+const defaultEventForm = (): EventFormState => ({
+  title: '',
+  description: '',
+  eventDate: '',
+  location: '',
+  visibility: 'public',
+  participantLimit: '',
+  category: '',
+  tags: '',
+})
 
 const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms))
 
@@ -141,6 +187,20 @@ function EndpointIcon({ icon }: { icon: EndpointItem['icon'] }) {
     )
   }
 
+  if (icon === 'event') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6 4.8v3" />
+        <path d="M18 4.8v3" />
+        <path d="M4.8 8h14.4" />
+        <rect x="4.8" y="6.8" width="14.4" height="12.4" rx="2" />
+        <path d="M8.4 12.6h2.8" />
+        <path d="M12.8 12.6h2.8" />
+        <path d="M8.4 16h2.8" />
+      </svg>
+    )
+  }
+
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M3.8 12h2.8" />
@@ -181,6 +241,10 @@ function App() {
   const [refreshToken, setRefreshToken] = useState<string>('')
   const [user, setUser] = useState<UserPayload | null>(null)
   const [mePayload, setMePayload] = useState<MeResponse | null>(null)
+  const [events, setEvents] = useState<EventPayload[]>([])
+  const [eventForm, setEventForm] = useState<EventFormState>(defaultEventForm)
+  const [eventsLoading, setEventsLoading] = useState(false)
+  const [editingEventId, setEditingEventId] = useState<string | null>(null)
   const [tokenExpiry, setTokenExpiry] = useState<number | null>(null)
   const [loginFailures, setLoginFailures] = useState(0)
   const [loginLockedUntil, setLoginLockedUntil] = useState(0)
@@ -317,8 +381,8 @@ function App() {
 
   const callApi = async <T,>(
     path: string,
-    method: 'GET' | 'POST',
-    body?: Record<string, string>,
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+    body?: unknown,
     withAuth?: boolean,
     options?: RequestOptions,
   ): Promise<T> => {
@@ -501,6 +565,102 @@ function App() {
     }
   }
 
+  const loadEvents = async () => {
+    setEventsLoading(true)
+    try {
+      const data = await callApi<EventListResponse>('/api/v1/events?limit=50', 'GET', undefined, true)
+      setEvents(data.items)
+      setMessage(`${data.count} event loaded successfully.`)
+    } catch (error) {
+      setMessage((error as Error).message)
+    } finally {
+      setEventsLoading(false)
+    }
+  }
+
+  const resetEventComposer = () => {
+    setEventForm(defaultEventForm())
+    setEditingEventId(null)
+  }
+
+  const onSaveEvent = async (event: FormEvent) => {
+    event.preventDefault()
+    setEventsLoading(true)
+
+    try {
+      const payload = {
+        title: eventForm.title.trim(),
+        description: eventForm.description.trim(),
+        event_date: new Date(eventForm.eventDate).toISOString(),
+        location: eventForm.location.trim(),
+        visibility: eventForm.visibility,
+        participant_limit:
+          eventForm.participantLimit.trim() === ''
+            ? null
+            : Number.parseInt(eventForm.participantLimit, 10),
+        category: eventForm.category.trim(),
+        tags: eventForm.tags
+          .split(',')
+          .map((tag) => tag.trim())
+          .filter(Boolean),
+      }
+
+      if (Number.isNaN(payload.participant_limit as number)) {
+        throw new Error('Participant limit must be a valid number.')
+      }
+
+      if (editingEventId) {
+        await callApi<EventPayload>(`/api/v1/events/${editingEventId}`, 'PUT', payload, true)
+        setMessage('Event updated successfully.')
+      } else {
+        await callApi<EventPayload>('/api/v1/events', 'POST', payload, true)
+        setMessage('Event created successfully.')
+      }
+
+      resetEventComposer()
+      await loadEvents()
+    } catch (error) {
+      setMessage((error as Error).message)
+    } finally {
+      setEventsLoading(false)
+    }
+  }
+
+  const onEditEvent = (selected: EventPayload) => {
+    setEditingEventId(selected.id)
+    setEventForm({
+      title: selected.title,
+      description: selected.description,
+      eventDate: selected.event_date.slice(0, 16),
+      location: selected.location,
+      visibility: selected.visibility,
+      participantLimit:
+        selected.participant_limit === null || selected.participant_limit === undefined
+          ? ''
+          : String(selected.participant_limit),
+      category: selected.category ?? '',
+      tags: (selected.tags ?? []).join(', '),
+    })
+  }
+
+  const onDeleteEvent = async (eventID: string) => {
+    if (!window.confirm('Delete this event permanently?')) return
+
+    setEventsLoading(true)
+    try {
+      await callApi(`/api/v1/events/${eventID}`, 'DELETE', undefined, true)
+      if (editingEventId === eventID) {
+        resetEventComposer()
+      }
+      setMessage('Event deleted successfully.')
+      await loadEvents()
+    } catch (error) {
+      setMessage((error as Error).message)
+    } finally {
+      setEventsLoading(false)
+    }
+  }
+
   useEffect(() => {
     if (!isAuthenticated && location.pathname !== '/') {
       navigate('/')
@@ -511,6 +671,12 @@ function App() {
       navigate('/dashboard')
     }
   }, [isAuthenticated, location.pathname, navigate])
+
+  useEffect(() => {
+    if (isAuthenticated && location.pathname === '/events') {
+      void loadEvents()
+    }
+  }, [isAuthenticated, location.pathname])
 
   const DashboardPage = () => (
     <section className="panel dashboard-panel">
@@ -593,6 +759,154 @@ function App() {
     </section>
   )
 
+  const EventsPage = () => (
+    <section className="panel events-panel">
+      <div className="panel-head">
+        <h2>Events</h2>
+        <p>Create, update, and manage event inventory directly from frontend.</p>
+      </div>
+
+      <form className="auth-form event-form" onSubmit={onSaveEvent}>
+        <div className="event-form-grid">
+          <label>
+            Title
+            <input
+              value={eventForm.title}
+              onChange={(event) => setEventForm((prev) => ({ ...prev, title: event.target.value }))}
+              placeholder="Go Meetup Istanbul"
+              required
+            />
+          </label>
+          <label>
+            Date
+            <input
+              type="datetime-local"
+              value={eventForm.eventDate}
+              onChange={(event) =>
+                setEventForm((prev) => ({ ...prev, eventDate: event.target.value }))
+              }
+              required
+            />
+          </label>
+          <label>
+            Location
+            <input
+              value={eventForm.location}
+              onChange={(event) =>
+                setEventForm((prev) => ({ ...prev, location: event.target.value }))
+              }
+              placeholder="Kadikoy"
+              required
+            />
+          </label>
+          <label>
+            Visibility
+            <select
+              value={eventForm.visibility}
+              onChange={(event) =>
+                setEventForm((prev) => ({
+                  ...prev,
+                  visibility: event.target.value as EventFormState['visibility'],
+                }))
+              }
+            >
+              <option value="public">public</option>
+              <option value="private">private</option>
+            </select>
+          </label>
+          <label>
+            Participant Limit
+            <input
+              type="number"
+              min="0"
+              value={eventForm.participantLimit}
+              onChange={(event) =>
+                setEventForm((prev) => ({ ...prev, participantLimit: event.target.value }))
+              }
+              placeholder="150"
+            />
+          </label>
+          <label>
+            Category
+            <input
+              value={eventForm.category}
+              onChange={(event) =>
+                setEventForm((prev) => ({ ...prev, category: event.target.value }))
+              }
+              placeholder="technology"
+            />
+          </label>
+          <label className="wide">
+            Tags (comma separated)
+            <input
+              value={eventForm.tags}
+              onChange={(event) => setEventForm((prev) => ({ ...prev, tags: event.target.value }))}
+              placeholder="go, backend, meetup"
+            />
+          </label>
+          <label className="wide">
+            Description
+            <textarea
+              value={eventForm.description}
+              onChange={(event) =>
+                setEventForm((prev) => ({ ...prev, description: event.target.value }))
+              }
+              placeholder="Event details"
+              rows={3}
+            />
+          </label>
+        </div>
+
+        <div className="action-row">
+          <button className="cta" type="submit" disabled={eventsLoading}>
+            {eventsLoading ? 'Saving...' : editingEventId ? 'Update event' : 'Create event'}
+          </button>
+          <button type="button" onClick={resetEventComposer} disabled={eventsLoading}>
+            Reset
+          </button>
+          <button type="button" onClick={loadEvents} disabled={eventsLoading}>
+            Reload list
+          </button>
+        </div>
+      </form>
+
+      <div className="events-list">
+        {events.length === 0 ? (
+          <p className="empty-state">No events yet.</p>
+        ) : (
+          events.map((item) => (
+            <article key={item.id} className="event-item">
+              <div>
+                <h3>{item.title}</h3>
+                <p>
+                  {new Date(item.event_date).toLocaleString('tr-TR')} · {item.location} ·{' '}
+                  {item.visibility}
+                </p>
+                <p className="event-meta">
+                  Category: {item.category || 'N/A'} · Limit:{' '}
+                  {item.participant_limit ?? 'unlimited'} · Tags: {item.tags.join(', ') || '-'}
+                </p>
+              </div>
+              <div className="event-actions">
+                <button type="button" onClick={() => onEditEvent(item)} disabled={eventsLoading}>
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  className="danger"
+                  onClick={() => onDeleteEvent(item.id)}
+                  disabled={eventsLoading}
+                >
+                  Delete
+                </button>
+              </div>
+            </article>
+          ))
+        )}
+      </div>
+    </section>
+  )
+
   return (
     <div className="app-shell">
       <header className="hero">
@@ -639,8 +953,8 @@ function App() {
         </article>
         <article className="kpi-card">
           <p className="kpi-label">Auth coverage</p>
-          <h3>6 endpoints</h3>
-          <span>Register, Login, Refresh, Logout, Me, Health</span>
+          <h3>{endpointItems.length} endpoints</h3>
+          <span>Auth + Events endpoints integrated</span>
         </article>
       </section>
 
@@ -768,6 +1082,12 @@ function App() {
             >
               Profile
             </Link>
+            <Link
+              to="/events"
+              className={location.pathname === '/events' ? 'nav-link active' : 'nav-link'}
+            >
+              Events
+            </Link>
             <button className="nav-logout" onClick={onLogout} disabled={loading}>
               Logout
             </button>
@@ -777,6 +1097,7 @@ function App() {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/events" element={<EventsPage />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </section>
