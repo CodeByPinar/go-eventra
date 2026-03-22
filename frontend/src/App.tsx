@@ -589,8 +589,7 @@ function App() {
     setEditingEventId(null)
   }
 
-  const onSaveEvent = async (event: FormEvent) => {
-    event.preventDefault()
+  const saveEvent = async () => {
     setEventsLoading(true)
 
     try {
@@ -630,15 +629,6 @@ function App() {
     } finally {
       setEventsLoading(false)
     }
-  }
-
-  const onEventComposerKeyDown = (event: React.KeyboardEvent<HTMLFormElement>) => {
-    if (event.key !== 'Enter') return
-
-    const target = event.target as HTMLElement
-    if (target.tagName === 'TEXTAREA') return
-
-    event.preventDefault()
   }
 
   const onEditEvent = (selected: EventPayload) => {
@@ -786,7 +776,7 @@ function App() {
       </div>
 
       {isAuthenticated && (
-        <form className="auth-form event-form" onSubmit={onSaveEvent} onKeyDown={onEventComposerKeyDown}>
+        <section className="auth-form event-form" aria-label="Event composer">
         <div className="event-form-grid">
           <label>
             Title
@@ -878,7 +868,7 @@ function App() {
         </div>
 
         <div className="action-row">
-          <button className="cta" type="submit" disabled={eventsLoading}>
+          <button className="cta" type="button" onClick={() => void saveEvent()} disabled={eventsLoading}>
             {eventsLoading ? 'Saving...' : editingEventId ? 'Update event' : 'Create event'}
           </button>
           <button type="button" onClick={resetEventComposer} disabled={eventsLoading}>
@@ -894,7 +884,7 @@ function App() {
             Reload list
           </button>
         </div>
-        </form>
+        </section>
       )}
 
       <div className="events-list">
