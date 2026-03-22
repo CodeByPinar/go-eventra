@@ -1060,10 +1060,15 @@ function App() {
           </section>
 
           <section className="panel identity-card">
-            <h3>Personalized Access Preview</h3>
+            <h3>New: Event Module Connected</h3>
             <p>
-              Giris yaptiginda sana ozel dashboard ve profil alanlari acilir. Hesap bilgilerin,
-              token durumu ve kimlik payloadlari senin oturumuna gore gosterilir.
+              Frontend artik backend event endpointlerine bagli. Giris yaptiktan sonra Events
+              sekmesi uzerinden event olusturma, listeleme, guncelleme ve silme islemlerini
+              kullanabilirsin.
+            </p>
+            <p>
+              Not: Events sayfasi guvenlik nedeniyle sadece authenticated kullanicilara
+              gosterilir.
             </p>
           </section>
         </main>
